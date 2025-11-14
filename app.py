@@ -2,19 +2,8 @@ from shiny import App, ui, render, reactive
 import pandas as pd
 import matplotlib.pyplot as plt
 
-ui = ui.page_fluid(
-    ui.output_text("header"),
-    ui.output_plot("attendance_plot"),)
-
-def server(input, output, session):
-    @render.text
-    def header():
-        return "Attendance Rate"
-    
-    @render.plot
-    def attendance_plot():
-        df = pd.read_csv("attendance_anonymised-1.csv")
-        df = df.rename(columns={'Unit Instance Code': 'Module Code', 
+df = pd.read_csv("attendance_anonymised-1.csv")
+df = df.rename(columns={'Unit Instance Code': 'Module Code', 
                         'Calocc Code': 'Year', 
                         'Long Description': 'Module Name', 
                         'Register Event ID': 'Event ID', 
@@ -24,15 +13,34 @@ def server(input, output, session):
                         'Postive Marks': 'Attended', 
                         'Negative Marks': 'NotAttended', 
                         'Usage Code': 'Attendance Code'})
-        df['Date'] = pd.to_datetime(df['Date'])
-        history_df = df[df['Module Name'] == 'History']
-        history_attendance = history_df.groupby(history_df['Date'].dt.date)['Attended'].mean()
-        plt.figure(figsize=(24,8))
-        plt.title('Average History Module Attendance Rate Over Time')
-        plt.xlabel('Date')
-        plt.ylabel('Attendance Rate')
-        plt.grid()
-        fig = plt.plot(history_attendance, marker='o', linestyle='-')
+df['Date'] = pd.to_datetime(df['Date'])
+module_choices = sorted(df['Module Name'].dropna().unique())
+
+ui = ui.page_fluid(
+    ui.h2("Attendance Rate"),
+    ui.input_select("module", "Select module", choices = module_choices, selected = module_choices[0]),
+    ui.output_text("header"),
+    ui.output_plot("attendance_plot"),)
+
+# Making the app interactive - allowing the user to select the module to plot
+
+def server(input, output, session): # produces reactive outputs using inputs
+    @render.text
+    def header():
+        return f"Attendance Rate - {input.module()}"
+    
+    @render.plot
+    def attendance_plot():
+        module = input.module()
+        subset = df[df['Module Name'] == module] # filtering for selected module
+        attendance = subset.groupby(subset['Date'].dt.date)['Attended'].mean()
+        fig, ax = plt.subplots(figsize=(10,6))
+        ax.plot(attendance.index, attendance.values, marker='o', linestyle='-')
+        ax.set_title(f'Average {module} Attendance Rate Over Time')
+        ax.set_xlabel('Date')
+        ax.set_ylabel('Attendance Rate')
+        plt.setp(ax.get_xticklabels(), rotation=90)
+        ax.grid(True)
         return fig
 
 app = App(ui, server)
