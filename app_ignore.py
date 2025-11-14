@@ -6,7 +6,7 @@ ui = ui.page_fluid(
     ui.output_text("header"),
     ui.output_plot("attendance_plot"),)
 
-# History module attendance rate
+# history module attendance rate
 
 def server(input, output, session):
     @render.text

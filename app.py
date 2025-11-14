@@ -24,7 +24,7 @@ ui = ui.page_fluid(
 
 # Making the app interactive - allowing the user to select the module to plot
 
-def server(input, output, session): # produces reactive outputs using inputs
+def server(input, output, session): 
     @render.text
     def header():
         return f"Attendance Rate - {input.module()}"
@@ -32,7 +32,7 @@ def server(input, output, session): # produces reactive outputs using inputs
     @render.plot
     def attendance_plot():
         module = input.module()
-        subset = df[df['Module Name'] == module] # filtering for selected module
+        subset = df[df['Module Name'] == module]
         attendance = subset.groupby(subset['Date'].dt.date)['Attended'].mean()
         fig, ax = plt.subplots(figsize=(10,6))
         ax.plot(attendance.index, attendance.values, marker='o', linestyle='-')
